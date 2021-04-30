@@ -1,4 +1,3 @@
-use ash::version::{DeviceV1_0, EntryV1_0, InstanceV1_0};
 use ash::vk;
 
 use std::default::Default;

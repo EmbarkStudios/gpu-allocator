@@ -17,14 +17,16 @@ include = [
 ]
 
 [dependencies]
-ash = "0.32"
+# ash = "0.33"
+ash = { git = "https://github.com/MaikKlein/ash" }
 backtrace = "0.3"
 log = "0.4"
 thiserror = "1.0"
 imgui = { version = "0.6", optional = true }
 
 [dev-dependencies]
-ash-window = "0.6"
+# ash-window = "0.7"
+ash = { git = "https://github.com/MaikKlein/ash" }
 winit = "0.23"
 
 
