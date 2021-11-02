@@ -97,7 +97,9 @@ impl FreeListAllocator {
     fn get_new_chunk_id(&mut self) -> Result<std::num::NonZeroU64> {
         if self.chunk_id_counter == std::u64::MAX {
             // End of chunk id counter reached, no more allocations are possible.
-            return Err(AllocationError::OutOfMemory);
+            return Err(AllocationError::OutOfMemory(String::from(
+                "End of chunk id counter reached",
+            )));
         }
 
         let id = self.chunk_id_counter;
@@ -160,7 +162,10 @@ impl SubAllocator for FreeListAllocator {
     ) -> Result<(u64, std::num::NonZeroU64)> {
         let free_size = self.size - self.allocated;
         if size > free_size {
-            return Err(AllocationError::OutOfMemory);
+            return Err(AllocationError::OutOfMemory(format!(
+                "FreeListAllocator doesn't have {} bytes left only {}",
+                size, free_size,
+            )));
         }
 
         let mut best_fit_id: Option<std::num::NonZeroU64> = None;
@@ -228,7 +233,9 @@ impl SubAllocator for FreeListAllocator {
             }
         }
 
-        let first_fit_id = best_fit_id.ok_or(AllocationError::OutOfMemory)?;
+        let first_fit_id = best_fit_id.ok_or(AllocationError::OutOfMemory(String::from(
+            "No best_fit_id found",
+        )))?;
 
         let chunk_id = if best_chunk_size > best_aligned_size {
             let new_chunk_id = self.get_new_chunk_id()?;

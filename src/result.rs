@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum AllocationError {
     #[error("Out of memory")]
-    OutOfMemory,
+    OutOfMemory(String),
     #[error("Failed to map memory")]
     FailedToMap,
     #[error("No compatible memory type available")]

@@ -233,7 +233,7 @@ impl MemoryBlock {
             let hr = unsafe { device.CreateHeap(&desc, &d3d12::IID_ID3D12Heap, &mut heap) };
 
             if hr == winerror::E_OUTOFMEMORY {
-                return Err(AllocationError::OutOfMemory);
+                return Err(AllocationError::OutOfMemory(String::from("irrelevant")));
             } else if hr != winerror::S_OK {
                 return Err(AllocationError::Internal(format!(
                     "ID3D12Device::CreateHeap failed with hr {:#x}",
@@ -398,8 +398,8 @@ impl MemoryType {
                             backtrace: backtrace.map(|s| s.into()),
                         });
                     }
-                    Err(AllocationError::OutOfMemory) => {} // Block is full, continue search.
-                    Err(err) => return Err(err),            // Unhandled error, return.
+                    Err(AllocationError::OutOfMemory(_)) => {} // Block is full, continue search.
+                    Err(err) => return Err(err),               // Unhandled error, return.
                 }
             } else if empty_block_index == None {
                 empty_block_index = Some(mem_block_i);
@@ -437,7 +437,7 @@ impl MemoryType {
         );
         let (offset, chunk_id) = match allocation {
             Ok(value) => value,
-            Err(AllocationError::OutOfMemory) => {
+            Err(AllocationError::OutOfMemory(_)) => {
                 return Err(AllocationError::Internal(
                     "Allocation that must succeed failed. This is a bug in the allocator.".into(),
                 ))

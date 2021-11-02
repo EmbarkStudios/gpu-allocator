@@ -38,7 +38,9 @@ impl SubAllocator for DedicatedBlockAllocator {
         backtrace: Option<&str>,
     ) -> Result<(u64, std::num::NonZeroU64)> {
         if self.allocated != 0 {
-            return Err(AllocationError::OutOfMemory);
+            return Err(AllocationError::OutOfMemory(String::from(
+                "allocated != 0 for DedicatedBlockAllocator",
+            )));
         }
 
         if self.size != size {

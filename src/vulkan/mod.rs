@@ -157,8 +157,9 @@ impl MemoryBlock {
                 alloc_info
             };
 
-            unsafe { device.allocate_memory(&alloc_info, None) }
-                .map_err(|_| AllocationError::OutOfMemory)?
+            unsafe { device.allocate_memory(&alloc_info, None) }.map_err(|e| {
+                AllocationError::OutOfMemory(format!("vkAllocateMemory failed: {:?}", e))
+            })?
         };
 
         let mapped_ptr = if mapped {
@@ -335,8 +336,8 @@ impl MemoryType {
                         });
                     }
                     Err(err) => match err {
-                        AllocationError::OutOfMemory => {} // Block is full, continue search.
-                        _ => return Err(err),              // Unhandled error, return.
+                        AllocationError::OutOfMemory(_) => {} // Block is full, continue search.
+                        _ => return Err(err),                 // Unhandled error, return.
                     },
                 }
             } else if empty_block_index == None {
@@ -377,7 +378,7 @@ impl MemoryType {
         let (offset, chunk_id) = match allocation {
             Ok(value) => value,
             Err(err) => match err {
-                AllocationError::OutOfMemory => {
+                AllocationError::OutOfMemory(_) => {
                     return Err(AllocationError::Internal(
                         "Allocation that must succeed failed. This is a bug in the allocator."
                             .into(),
@@ -611,7 +612,9 @@ impl Allocator {
         //Do not try to create a block if the heap is smaller than the required size (avoids validation warnings).
         let memory_type = &mut self.memory_types[memory_type_index];
         let allocation = if size > self.memory_heaps[memory_type.heap_index].size {
-            Err(AllocationError::OutOfMemory)
+            Err(AllocationError::OutOfMemory(String::from(
+                "Block is smaller then heap",
+            )))
         } else {
             memory_type.allocate(
                 &self.device,
