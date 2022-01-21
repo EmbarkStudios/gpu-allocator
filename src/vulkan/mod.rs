@@ -9,7 +9,8 @@ use super::allocator;
 use super::allocator::AllocationType;
 use ash::vk;
 use log::{debug, warn, Level};
-use std::fmt;
+use core::fmt;
+use core::mem::MaybeUninit;
 
 use crate::{AllocationError, AllocatorDebugSettings, MemoryLocation, Result};
 
@@ -38,6 +39,7 @@ pub struct Allocation {
     chunk_id: Option<std::num::NonZeroU64>,
     offset: u64,
     size: u64,
+    alignment: u64,
     memory_block_index: usize,
     memory_type_index: usize,
     device_memory: vk::DeviceMemory,
@@ -82,6 +84,10 @@ impl Allocation {
         self.size
     }
 
+    pub fn alignment(&self) -> u64 {
+        self.alignment
+    }
+
     /// Returns a valid mapped pointer if the memory is host visible, otherwise it will return None.
     /// The pointer already points to the exact memory region of the suballocation, so no offset needs to be applied.
     pub fn mapped_ptr(&self) -> Option<std::ptr::NonNull<std::ffi::c_void>> {
@@ -90,7 +96,7 @@ impl Allocation {
 
     /// Returns a valid mapped slice if the memory is host visible, otherwise it will return None.
     /// The slice already references the exact memory region of the allocation, so no offset needs to be applied.
-    pub fn mapped_slice(&self) -> Option<&[u8]> {
+    pub fn mapped_slice(&self) -> Option<&[MaybeUninit<u8>]> {
         self.mapped_ptr().map(|ptr| unsafe {
             std::slice::from_raw_parts(ptr.cast().as_ptr(), self.size as usize)
         })
@@ -98,7 +104,7 @@ impl Allocation {
 
     /// Returns a valid mapped mutable slice if the memory is host visible, otherwise it will return None.
     /// The slice already references the exact memory region of the allocation, so no offset needs to be applied.
-    pub fn mapped_slice_mut(&mut self) -> Option<&mut [u8]> {
+    pub fn mapped_slice_mut(&mut self) -> Option<&mut [MaybeUninit<u8>]> {
         self.mapped_ptr().map(|ptr| unsafe {
             std::slice::from_raw_parts_mut(ptr.cast().as_ptr(), self.size as usize)
         })
@@ -115,6 +121,7 @@ impl Default for Allocation {
             chunk_id: None,
             offset: 0,
             size: 0,
+            alignment: 1,
             memory_block_index: !0,
             memory_type_index: !0,
             device_memory: vk::DeviceMemory::null(),
@@ -291,6 +298,7 @@ impl MemoryType {
                 chunk_id: Some(chunk_id),
                 offset,
                 size,
+                alignment,
                 memory_block_index: block_index,
                 memory_type_index: self.memory_type_index as usize,
                 device_memory: mem_block.device_memory,
@@ -323,6 +331,7 @@ impl MemoryType {
                             chunk_id: Some(chunk_id),
                             offset,
                             size,
+                            alignment,
                             memory_block_index: mem_block_i,
                             memory_type_index: self.memory_type_index as usize,
                             device_memory: mem_block.device_memory,
@@ -394,6 +403,7 @@ impl MemoryType {
             chunk_id: Some(chunk_id),
             offset,
             size,
+            alignment,
             memory_block_index: new_block_index,
             memory_type_index: self.memory_type_index as usize,
             device_memory: mem_block.device_memory,
