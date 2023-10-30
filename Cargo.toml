@@ -85,3 +85,6 @@ d3d12 = ["windows"]
 public-winapi = ["dep:winapi"]
 
 default = ["d3d12", "vulkan"]
+
+[patch.crates-io]
+ash = { git = "https://github.com/EmbarkStudios/ash", branch = "nv-low-latency2" }
